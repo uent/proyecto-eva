@@ -1,0 +1,10 @@
+{
+  "name": "Cafetería del paseo",
+  "description": "cozy café next to the seaside promenade, wooden tables, large windows, coffee aroma and mid-morning light",
+  "affinity": {
+    "dulce": 0.3,
+    "curiosa": 0.3,
+    "coqueta": 0.1,
+    "ansiosa": -0.2
+  }
+}

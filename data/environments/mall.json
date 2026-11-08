@@ -1,0 +1,10 @@
+{
+  "name": "Mall",
+  "description": "modern three-story shopping mall, Seda y Nácar lingerie store, spacious fitting rooms and display-window lighting",
+  "affinity": {
+    "coqueta": 0.5,
+    "curiosa": 0.3,
+    "ansiosa": 0.1,
+    "dulce": 0.1
+  }
+}

@@ -1,0 +1,48 @@
+<lorebook>
+{{lorebook}}
+</lorebook>
+
+<scene>
+{{scene.name}} — {{scene.location}}
+Tema: {{scene.mindTags}}
+</scene>
+
+<character>
+Nombre: {{character.name}}
+Personalidad: {{character.personality}} (rasgos: {{character.traits}})
+Voz interior declarada: {{character.mind.voice}}
+Contradicción activa: {{character.mind.contradiction}}
+</character>
+
+<story>
+{{story}}
+</story>
+
+<task>
+A partir de la historia, escribe los diálogos y pensamientos de los personajes presentes, en orden cronológico (10 a 16 líneas).
+
+El diálogo ocurre DENTRO del momento sexual de la escena, no antes ni después. El sexo y el deseo no son un telón de fondo: son el tema central y deben estar presentes en la mayoría de las líneas. Si en la historia hay un acto sexual, las líneas son la conversación que sostienen mientras se tocan, se lamen o se penetran. Si la escena es de deseo sin acto, el diálogo debe estar cargado de excitación explícita: lo que miran, lo que se muerden, lo que quieren hacer y lo que se callan.
+
+Formato, una línea por intervención y siempre empezando por el nombre de quien la emite:
+- Lo que se dice en voz alta: `Nombre: texto.`
+- Un pensamiento (o un gesto sin palabras): `Nombre: *texto*.`
+
+Ejemplo del formato:
+Master: *le agarra las caderas y la empuja hasta el fondo*.
+Master: ¿aquí lo quieres, mi niña?
+{{character.name}}: *se muerde el labio para no gritar, pero la cadera se le va sola hacia atrás*.
+{{character.name}}: sí, master, ahí... no pares.
+Master: buena chica. Mírame mientras te la meto.
+{{character.name}}: *odia lo bien que se siente obedecer así*.
+
+Reglas:
+- Al menos dos tercios de las líneas deben nombrar el acto sexual en curso o el deseo que lo alimenta: partes del cuerpo (coño, culo, tetas, polla, verga), posiciones, penetración, oral, anal, fluidos, el ruido húmedo, gemidos, jadeos, órdenes y súplicas sexuales. Vocabulario explícito y directo, sin pudor y sin metáforas floridas.
+- Prohibido resumir el sexo, saltarlo o sustituirlo por elipsis ("se tiñe", "el placer la sube", "pasan el rato"). Cada línea debe contener un detalle concreto de lo que está pasando en ese instante: qué entra, qué aprieta, qué se moja, qué duele rico, qué se pide.
+- El personaje masculino habla como quien dirige: órdenes, indicaciones, preguntas sucias, elogios por lo bien que lo hace. La neo mujer responde con lo que siente en el cuerpo, lo que quiere que le haga y lo que se atreve a pedir. Sus pensamientos también pueden ser sexuales: lo que la excita, lo que le da vergüenza desear, lo que no diría en voz alta.
+- La mente de {{character.name}} sigue siendo el eje: al menos 4 de las líneas son pensamientos o gestos suyos, al menos uno contradice lo que acaba de decir en voz alta y al menos uno revela un deseo, un miedo o una resistencia. Esos pensamientos deben estar atravesados por el sexo, no ser quejas domésticas.
+- Los pensamientos y gestos entre *...* son breves: una sola frase corta, concreta y sensorial, sin describir el entorno ni repetir la línea anterior.
+- El personaje masculino empieza sus líneas como `Master:`; la neo mujer se dirige a él como "master" en minúscula.
+- Solo hablan y piensan personajes que aparecen en la historia, coherentes con su personalidad y con el acondicionamiento.
+- Respeta las reglas del lorebook: el sexo cotidiano usa vías no conceptivas (oral, anal, entre los pechos); la penetración vaginal solo en Día de concepción. El consentimiento se renueva en cada encuentro.
+- Sin narración, sin títulos ni explicaciones: solo las líneas en ese formato.
+</task>

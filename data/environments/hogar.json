@@ -1,0 +1,10 @@
+{
+  "name": "Hogar EVA",
+  "description": "modern EVA couple's apartment, warm light, walk-in closet with a three-way mirror, king bed, terrace with potted plants and a pink pillbox on the side table",
+  "affinity": {
+    "dulce": 0.5,
+    "obediente": 0.5,
+    "coqueta": 0.2,
+    "ansiosa": -0.4
+  }
+}

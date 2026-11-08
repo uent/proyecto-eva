@@ -1,0 +1,9 @@
+{
+  "name": "Discoteca",
+  "description": "nightclub by the harbor, purple lights, central dance floor, curtained VIP booths and pink cocktails at the bar",
+  "affinity": {
+    "coqueta": 0.6,
+    "curiosa": 0.2,
+    "ansiosa": 0.2
+  }
+}

@@ -1,0 +1,55 @@
+<lorebook>
+{{lorebook}}
+</lorebook>
+
+<scene>
+{{scene.name}} — {{scene.location}}
+{{character.name}} {{scene.description}}
+</scene>
+
+<character>
+Nombre: {{character.name}}
+Personalidad: {{character.personality}} (rasgos: {{character.traits}})
+Voz interior declarada: {{character.mind.voice}}
+Contradicción activa: {{character.mind.contradiction}}
+Secreto: {{character.mind.secret}}
+Tabú: {{character.mind.taboo}}
+Arco: {{character.mind.arc}}
+Expresión actual: {{expression.name}} ({{expression.story}})
+Voz interior de esta expresión: {{expression.inner}}
+</character>
+
+<stats>
+{{stats_json}}
+</stats>
+
+<inner_memory>
+{{inner_memory}}
+</inner_memory>
+
+<current_mind>
+{{current_mind}}
+</current_mind>
+
+<recent_actions>
+{{recent_actions}}
+</recent_actions>
+
+<previous_story>
+{{history}}
+</previous_story>
+
+<task>
+Escribe la siguiente escena de la vida de {{character.name}} en el mundo EVA, en 3 párrafos, en tercera persona y en español, continuando desde <recent_actions>, <previous_story> e <inner_memory>.
+- {{character.name}} es una neo mujer; su hombre es "el master". Usa esos términos y el tono del lorebook.
+- La mente interior de {{character.name}} es el eje de la escena, no un adorno: lo que piensa, lo que se dice a sí misma y lo que no se atreve a decir debe tener tanto peso como lo que ocurre.
+- Dedica al menos un tercio del texto a su experiencia interna. Usa estilo indirecto libre: sus pensamientos pueden aparecer sin comillas, mezclados con la narración, sin convertir la escena en un monólogo abstracto.
+- Cada escena necesita un giro interior: un momento en que lo que piensa contradice, matiza o resignifica lo que dice o hace. Muestra esa contradicción con un detalle concreto (una mirada, un gesto, una frase que se traga), no con explicaciones psicológicas.
+- Haz avanzar el arco de <current_mind>: si algo se resiste, que se resista de verdad; si algo empieza a aceptarse, que se note en una fisura pequeña, no en una confesión repentina. No repitas el mismo pensamiento de <inner_memory>.
+- Cierra la escena con una decisión, una aceptación o una negación privada que deje abierta la siguiente.
+- Las estadísticas (valor dentro de su rango min-max) deben notarse en el ánimo, el cuerpo y la conducta de {{character.name}} como sentimientos que vive por dentro, sin citar números ni nombres de estadísticas.
+- Respeta el lorebook y lo ya ocurrido: no contradigas hechos establecidos ni inventes personajes fuera de él.
+- El acondicionamiento (dosis, parche, vestuario, voz, postura) forma parte de la rutina; el consentimiento se renueva en cada encuentro.
+- Solo aparecen personajes del lorebook o presentes en la escena.
+- Responde únicamente con la historia, sin títulos ni comentarios.
+</task>

@@ -1,0 +1,9 @@
+{
+  "name": "Baños",
+  "description": "clean unisex public restrooms, tile and wood, long mirror, spacious stalls and warm light",
+  "affinity": {
+    "coqueta": 0.3,
+    "ansiosa": 0.2,
+    "curiosa": 0.1
+  }
+}

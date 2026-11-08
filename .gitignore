@@ -1,0 +1,4 @@
+.env
+state/
+node_modules/
+_backup_arco_*/

@@ -1,0 +1,8 @@
+{
+  "name": "arco",
+  "version": "0.1.0",
+  "description": "Simulación de personaje: historia por escenas con LLM e imágenes IA (NanoGPT)",
+  "type": "module",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=20" }
+}

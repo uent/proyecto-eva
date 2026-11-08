@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Arco</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap">
+<link rel="stylesheet" href="style.css"></head>
+<body>
+<header>
+  <div class="bar-row" id="texts">
+    <h1>Arco</h1>
+    <div class="grp"><span class="glbl">Textos</span>
+      <button id="pedit">✎ Prompts</button>
+      <button id="reload" title="Relee todos los archivos de data/ sin reiniciar">⟳ Recargar</button>
+      <button id="hist">📜 Histórico</button>
+      <button id="rules">ƒ Reglas</button>
+      <button id="coll">☰ Colección</button>
+    </div>
+    <div class="grp"><span class="glbl">Personaje</span>
+      <button id="edit">✎ Editar</button>
+      <button id="new">+ Nuevo</button>
+    </div>
+    <div class="grp"><span class="glbl">Master</span>
+      <span id="mname"></span>
+      <button id="medit" title="Datos visuales del master para las imágenes">✎ Editar</button>
+    </div>
+    <div class="grp"><span class="glbl">Escena</span>
+      <select id="scene" title="Escena a editar"></select>
+      <button id="sedit">✎ Editar</button>
+      <button id="snew">+ Nueva</button>
+    </div>
+    <div class="grp"><span class="glbl">Entorno</span>
+      <select id="env" title="Entorno"></select>
+      <button id="eedit">✎ Editar</button>
+      <button id="enew">+ Nuevo</button>
+    </div>
+  </div>
+  <div class="bar-row" id="story-bar">
+    <span class="lbl">Historia actual</span>
+    <select id="char" title="Personaje actual"></select>
+    <label class="lbl" for="count">Avances</label>
+    <input id="count" type="number" min="1" max="10" value="1" title="Cuántos avances completos generar seguidos">
+    <button id="go">⏭ Avanzar tiempo</button>
+    <button id="reset">↺ Reiniciar personaje</button>
+    <span id="status"></span>
+  </div>
+</header>
+<main>
+  <aside><h2>Estadísticas</h2><div id="stats"></div>
+    <div id="mood"></div>
+    <h2 class="h-mind">Mente</h2><div id="mind"></div>
+    <h2 class="h-sched">Horario</h2><div id="sched"></div></aside>
+  <section id="feed"></section>
+</main>
+<dialog id="dlg"><form method="dialog" id="form">
+  <h2 id="dtitle">Personaje</h2>
+  <label>Nombre <input name="name" required></label>
+  <label>Personalidad <textarea name="personality" rows="2"></textarea></label>
+  <label>Rasgos (separados por coma) <input name="traits" placeholder="tranquila, curiosa"></label>
+  <fieldset><legend>Mente interior</legend>
+    <label>Voz interior <textarea name="mindVoice" rows="2" placeholder="cómo suena lo que se dice a sí misma"></textarea></label>
+    <label>Contradicción activa <textarea name="mindContradiction" rows="2" placeholder="lo que siente vs. lo que se permite"></textarea></label>
+    <label>Secreto <textarea name="mindSecret" rows="2" placeholder="lo que no dice en voz alta"></textarea></label>
+    <label>Tabú <textarea name="mindTaboo" rows="2" placeholder="lo que se prohíbe pensar"></textarea></label>
+    <label>Arco <textarea name="mindArc" rows="2" placeholder="en qué se está convirtiendo sin querer"></textarea></label>
+    <label>Etiquetas activas (coma) <input name="mindTags" placeholder="negacion, cuerpo, mirada_masculina"></label>
+    <label>Etiquetas que resiste (coma) <input name="mindResist" placeholder="entrega, aceptacion"></label>
+    <small>Vocabulario: negacion, cuerpo, mirada_masculina, entrega, deseo, vinculo, ansiedad, calma, feminidad, secreto, control, ternura, aceptacion, conflicto.</small>
+  </fieldset>
+  <fieldset><legend>Estadísticas iniciales</legend><div id="fstats"></div></fieldset>
+  <fieldset><legend>Horario diario (5 bloques)</legend><div id="fsched"></div></fieldset>
+  <fieldset><legend>Cuerpo (secciones fijas)</legend><div id="fbody"></div></fieldset>
+  <div class="actions"><button type="button" id="cancel">Cancelar</button><button type="submit" id="save">Guardar</button></div>
+  <small>Guardar escribe data/characters/*.json. El progreso en curso del personaje no se reinicia.</small>
+</form></dialog>
+<dialog id="pdlg"><form id="pform">
+  <h2>Prompts y lorebook</h2>
+  <label>Prompt 1 — historia <textarea name="prompt_1" rows="10"></textarea></label>
+  <small>Tags: {{lorebook}} {{character.name}} {{character.personality}} {{character.traits}} {{character.statsText}} {{character.mind.voice}} {{character.mind.contradiction}} {{character.mind.secret}} {{character.mind.taboo}} {{character.mind.arc}} {{scene.name}} {{scene.location}} {{scene.description}} {{environment.name}} {{environment.description}} {{master}} {{master.head}} {{master.hands}}… {{expression.name}} {{expression.story}} {{expression.inner}} {{inner_memory}} {{current_mind}} {{history}} {{stats_json}} {{recent_actions}}</small>
+  <label>Prompt 2 — conversación <textarea name="prompt_2" rows="5"></textarea></label>
+  <small>Mismos tags + {{story}} (resultado del prompt 1)</small>
+  <label>Prompt de mente — estado interior <textarea name="prompt_mind" rows="6"></textarea></label>
+  <small>Mismos tags + {{story}} + {{dialogue}}. Debe devolver solo JSON: pensamiento, deseo_privado, miedo, oculta, acepta, tags y resist.</small>
+  <label>Prompt de imagen <textarea name="image" rows="5"></textarea></label>
+  <small>Tags de cuerpo (solo las partes visibles según el encuadre): {{body}} {{body.general}} {{body.head}} {{body.chest}} {{body.hips}} {{body.legs}} · Master: {{master}} {{master.name}} {{master.head}} {{master.hands}}… · Expresión: {{expression}} {{expression.name}} {{expression.story}} {{expression.score}} · además {{character.name}} {{scene.description}} {{scene.location}} {{environment.description}}</small>
+  <label>Lorebook de respaldo (.md) <textarea name="lorebook" rows="6"></textarea></label>
+  <small id="lorebooknote"></small>
+  <div class="actions"><button type="button" id="pcancel">Cerrar</button><button type="submit">Guardar</button></div>
+</form></dialog>
+<dialog id="sdlg"><form id="sform">
+  <h2 id="sdtitle">Escena</h2>
+  <label>Nombre <input name="name" required></label>
+  <label>Concepto (agrupa escenas; los bloques horarios eligen uno al azar) <input name="concept" list="concepts" placeholder="ej. descanso, trabajo, social"><datalist id="concepts"></datalist></label>
+  <label>Lugar <input name="location"></label>
+  <label>Descripción (lo que hace el personaje) <textarea name="description" rows="3"></textarea></label>
+  <label>Etiquetas de mente (coma; activan resonancia o fricción) <input name="mindTags" placeholder="cuerpo, entrega, secreto"></label>
+  <small>Si una etiqueta coincide con la mente activa hay resonancia; si coincide con lo que resiste, fricción. Las dos suman tensión y modifican estadísticas (ver data/stats.json → mind).</small>
+  <div class="two">
+    <label>Entorno <select name="environment"></select></label>
+    <label>Formato de imagen <select name="aspect"></select></label>
+  </div>
+  <div class="pthead"><span>Template del prompt de imagen</span>
+    <label class="tog"><input type="checkbox" id="swith"> Insertar datos del personaje y del master <small id="pcap"></small></label></div>
+  <textarea id="sprompt" rows="5" readonly></textarea>
+  <fieldset><legend>Master en la escena</legend><div id="smaster" class="sgrid"></div>
+    <small>Marca las partes del master que se ven. <b>{{master}}</b> se resuelve solo con esas partes; sin ninguna marcada, el master no aparece en la imagen.</small></fieldset>
+  <div class="taghead"><span>Tags disponibles</span><small>Haz clic para insertarlos en el campo que estés editando (por defecto, la descripción).</small></div>
+  <div id="stags" class="tags"></div>
+  <fieldset><legend>Efectos base en estadísticas</legend><div id="sfx"></div></fieldset>
+  <div class="actions"><button type="button" id="sdel">Eliminar</button><button type="button" id="sprev">🎲 Probar con personaje al azar</button>
+  <button type="button" id="scancel">Cerrar</button><button type="submit">Guardar</button></div>
+  <div id="prev"></div>
+</form></dialog>
+<dialog id="mdlg"><form id="mform">  <h2>Master</h2>
+  <label>Nombre <input name="name" required></label>
+  <small>Apariencia del master para la generación de imágenes (en inglés, como el resto de textos visuales). Cada escena elige qué partes se inyectan con <b>{{master}}</b>; los tags de cada parte son <b>{{master.head}}</b>, <b>{{master.hands}}</b>…</small>
+  <fieldset><legend>Apariencia física</legend><div id="mbody"></div></fieldset>
+  <div class="actions"><button type="button" id="mcancel">Cerrar</button><button type="submit">Guardar</button></div>
+</form></dialog>
+<dialog id="xdlg"><form id="xform">
+  <h2>Niveles de expresión</h2>
+  <label>Fórmula del score (0–100) <textarea name="formula" rows="2"></textarea></label>
+  <small>La voz interior se usa en el prompt de la historia; la cara, en el de la imagen.</small>
+  <small>Variables: <b>deseo</b>, <b>feminidad</b>, <b>obediencia</b>, <b>vínculo</b> y <b>ansiedad</b> (valores actuales). Funciones: <b>Math</b>, <b>min</b>, <b>max</b>.</small>
+  <fieldset><legend>Niveles: el score elige el nivel con el «desde» más alto que no lo supere</legend><div id="xlevels"></div></fieldset>
+  <div class="actions"><button type="button" id="xcancel">Cerrar</button><button type="submit">Guardar</button></div>
+  <small>La cara se usa en el prompt de imagen (inglés); la historia, en el prompt de la historia.</small>
+</form></dialog>
+<dialog id="cdlg"><h2>Colección de personajes</h2><div id="grid"></div>
+  <div class="actions"><button id="cnew">+ Nuevo</button><button id="cclose">Cerrar</button></div></dialog>
+<dialog id="edlg"><form id="eform">
+  <h2 id="etitle">Entorno</h2>
+  <label>Nombre <input name="name" required></label>
+  <label>Descripción visual (se inserta en los prompts con {{environment.description}}) <textarea name="description" rows="2"></textarea></label>
+  <fieldset><legend>Afinidad por rasgo (+ le gusta, − le incomoda)</legend><div id="eaff"></div>
+    <div class="brow"><input id="enewtrait" placeholder="nuevo rasgo" style="flex:1"><button type="button" id="eaddtrait">+ rasgo</button></div></fieldset>
+  <small id="eused"></small>
+  <div class="actions"><button type="button" id="edel">Eliminar</button><button type="button" id="ecancel">Cerrar</button><button type="submit">Guardar</button></div>
+</form></dialog>
+<dialog id="rdlg"><h2>Reglas de estadísticas</h2>
+  <small>Después de aplicar los efectos de la escena, cada regla activa se evalúa en orden: si se cumplen <b>todas</b> sus condiciones, aplica sus efectos.
+  «Valor» es el valor actual de la estadística; «Cambio» es cuánto varió en esta escena.</small>
+  <div id="rlist"></div>
+  <div class="actions"><button type="button" id="radd">+ Nueva regla</button><button type="button" id="rcancel">Cerrar</button><button type="button" id="rsave" class="primary">Guardar</button></div>
+  <div id="rmsg"></div></dialog>
+<dialog id="hdlg"><h2 id="htitle">Histórico</h2><div id="hlist"></div>
+  <div class="actions"><button id="hclose">Cerrar</button></div></dialog>
+<div id="zoom" hidden><img alt=""></div>
+<script src="app.js"></script>
+</body></html>

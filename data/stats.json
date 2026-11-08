@@ -1,0 +1,45 @@
+{
+  "stats": {
+    "deseo": {
+      "min": 0,
+      "max": 100,
+      "start": 55
+    },
+    "feminidad": {
+      "min": 0,
+      "max": 100,
+      "start": 40
+    },
+    "obediencia": {
+      "min": 0,
+      "max": 100,
+      "start": 35
+    },
+    "vínculo": {
+      "min": 0,
+      "max": 100,
+      "start": 45
+    },
+    "ansiedad": {
+      "min": 0,
+      "max": 100,
+      "start": 40
+    }
+  },
+  "_doc": "Variables disponibles en las fórmulas: base (efecto de la escena), affinity (suma de rasgos vs entorno), current, min, max. Funciones: Math, min, max.",
+  "defaultFormula": "base * (1 + affinity)",
+  "formulas": {
+    "ansiedad": "base * (1 - affinity * 0.5)"
+  },
+  "mind": {
+    "enabled": true,
+    "resonance": {
+      "deseo": 1,
+      "vínculo": 0.5
+    },
+    "friction": {
+      "ansiedad": 2,
+      "obediencia": -0.5
+    }
+  }
+}

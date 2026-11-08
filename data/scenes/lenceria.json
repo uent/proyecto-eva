@@ -1,0 +1,17 @@
+{
+  "name": "Lenceria",
+  "concept": "",
+  "environment": "mall",
+  "aspect": "9:16",
+  "master": [],
+  "location": "",
+  "description": "beautiful young woman standing in a mall fitting room, {{character.name}}, {{body.general}}, {{body.head}},  in front of a triple\npanel mirror showing her from three angles, wearing only pink lace lingerie\nset, delicate bra and matching panties,\nsmooth flawless skin, full sensitive chest, soft blush on\ncheeks knees together, \nnewly feminine body she is discovering, mall changing room interior, white\ncurtain, wooden bench with folded clothes ({{body.chest}}, {{body.hips}})and shopping bags, hangers with\ndresses on the wall, warm flattering light, pink and cream tones, sensual\nintimate mood,",
+  "mindTags": [],
+  "effects": {
+    "deseo": 0,
+    "feminidad": 0,
+    "obediencia": 0,
+    "vínculo": 0,
+    "ansiedad": 0
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "name": "Yukiko",
+  "personality": "anteriormente un hombre, ahora una neo-mujer, sumisa, no le gusta ser mujer, su cuerpo reacciona positivamente a la feminidad, todavia le gustan las mujeres, pero, este cuerpo hace que mire a los hombres de otra forma..",
+  "traits": [
+    "Le gusta el sexo anal en secreto"
+  ],
+  "mind": {
+    "voice": "Una voz seca y lúcida que se corrige a sí misma; habla de su cuerpo como de alguien a quien está aprendiendo a querer.",
+    "contradiction": "No quiere ser mujer, pero su cuerpo celebra cada cambio; le gustan las mujeres, pero la mirada de los hombres la desarma.",
+    "secret": "Le gusta el sexo anal y le avergüenza que su cuerpo lo pida sin permiso.",
+    "taboo": "Reconocer que, a ratos, ser mujer le gusta.",
+    "arc": "De la negación orgullosa a una aceptación que no sabe si es suya o de las hormonas.",
+    "tags": [
+      "negacion",
+      "cuerpo",
+      "mirada_masculina"
+    ],
+    "resist": [
+      "entrega",
+      "aceptacion"
+    ]
+  },
+  "stats": {
+    "deseo": 0,
+    "feminidad": 0,
+    "obediencia": 0,
+    "vínculo": 0,
+    "ansiedad": 80
+  },
+  "body": {
+    "general": "p4yukiko, amagi yukiko. medium breast, slim body. 20yo.",
+    "head": "long hair, black hair, bangs, red hairband.",
+    "chest": "sailor collar, neckerchief, red sweater.",
+    "hips": "houndstooth pleated skirt,",
+    "legs": "black stockings, high heels"
+  },
+  "schedule": [
+    {
+      "start": "07:00",
+      "end": "09:00",
+      "concept": "Dormitorio"
+    },
+    {
+      "start": "09:00",
+      "end": "13:00",
+      "concept": "Dormitorio"
+    },
+    {
+      "start": "13:00",
+      "end": "17:00",
+      "concept": "Dormitorio"
+    },
+    {
+      "start": "17:00",
+      "end": "21:00",
+      "concept": "Dormitorio"
+    },
+    {
+      "start": "21:00",
+      "end": "23:00",
+      "concept": "Dormitorio"
+    }
+  ]
+}

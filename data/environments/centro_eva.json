@@ -1,0 +1,9 @@
+{
+  "name": "Centro Curva Rosa",
+  "description": "bright clinic of the EVA Program, white and pink walls, medical consultation room, butterfly posters and a faint smell of alcohol",
+  "affinity": {
+    "obediente": 0.4,
+    "ansiosa": 0.5,
+    "dulce": -0.1
+  }
+}

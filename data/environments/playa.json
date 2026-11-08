@@ -1,0 +1,10 @@
+{
+  "name": "Playa",
+  "description": "urban beach with pale sand, palm-lined promenade, tall dunes to the north, calm sea and beach bars with pink cocktails",
+  "affinity": {
+    "coqueta": 0.5,
+    "curiosa": 0.2,
+    "dulce": 0.2,
+    "ansiosa": -0.1
+  }
+}

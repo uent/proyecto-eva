@@ -1,0 +1,6 @@
+{
+  "portrait": ["general", "head"],
+  "upper": ["general", "head", "chest"],
+  "cowboy": ["general", "head", "chest", "hips"],
+  "full": ["general", "head", "chest", "hips", "legs"]
+}

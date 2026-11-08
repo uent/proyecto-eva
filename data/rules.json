@@ -1,0 +1,91 @@
+{
+  "rules": [
+    {
+      "name": "El deseo correspondido fortalece el vínculo",
+      "enabled": true,
+      "when": [
+        {
+          "stat": "deseo",
+          "field": "delta",
+          "op": ">",
+          "value": 0
+        },
+        {
+          "stat": "vínculo",
+          "field": "value",
+          "op": ">",
+          "value": 40
+        }
+      ],
+      "then": [
+        {
+          "stat": "vínculo",
+          "mode": "add",
+          "amount": 0.5,
+          "per": {
+            "stat": "deseo",
+            "field": "delta"
+          }
+        }
+      ]
+    },
+    {
+      "name": "La feminidad asentada vuelve natural la obediencia",
+      "enabled": true,
+      "when": [
+        {
+          "stat": "feminidad",
+          "field": "delta",
+          "op": ">",
+          "value": 0
+        },
+        {
+          "stat": "feminidad",
+          "field": "value",
+          "op": ">",
+          "value": 50
+        }
+      ],
+      "then": [
+        {
+          "stat": "obediencia",
+          "mode": "add",
+          "amount": 0.5,
+          "per": {
+            "stat": "feminidad",
+            "field": "delta"
+          }
+        }
+      ]
+    },
+    {
+      "name": "La aprobación del master calma la ansiedad",
+      "enabled": true,
+      "when": [
+        {
+          "stat": "obediencia",
+          "field": "delta",
+          "op": ">",
+          "value": 0
+        },
+        {
+          "stat": "vínculo",
+          "field": "value",
+          "op": ">",
+          "value": 50
+        }
+      ],
+      "then": [
+        {
+          "stat": "ansiedad",
+          "mode": "add",
+          "amount": -0.5,
+          "per": {
+            "stat": "obediencia",
+            "field": "delta"
+          }
+        }
+      ]
+    }
+  ]
+}

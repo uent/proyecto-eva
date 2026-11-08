@@ -1,0 +1,21 @@
+{
+  "name": "Tarde en la playa",
+  "concept": "playa",
+  "environment": "playa",
+  "aspect": "16:9",
+  "master": [],
+  "location": "Urban beach, pale sand by the sea",
+  "mindTags": [
+    "cuerpo",
+    "mirada_masculina",
+    "aceptacion"
+  ],
+  "description": "walking barefoot along the shoreline in a minimal bikini with the patch hidden under the fabric, the warm sea at her ankles and her master's gaze on her",
+  "effects": {
+    "deseo": 6,
+    "feminidad": 2,
+    "obediencia": 1,
+    "vínculo": 4,
+    "ansiedad": -4
+  }
+}

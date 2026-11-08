@@ -1,0 +1,49 @@
+<character>
+Nombre: {{character.name}}
+Personalidad: {{character.personality}} (rasgos: {{character.traits}})
+Voz interior declarada: {{character.mind.voice}}
+Contradicción activa: {{character.mind.contradiction}}
+Secreto: {{character.mind.secret}}
+Tabú: {{character.mind.taboo}}
+Arco: {{character.mind.arc}}
+Expresión resultante: {{expression.name}} ({{expression.inner}})
+</character>
+
+<current_mind>
+{{current_mind}}
+</current_mind>
+
+<stats>
+{{stats_json}}
+</stats>
+
+<story>
+{{story}}
+</story>
+
+<dialogue>
+{{dialogue}}
+</dialogue>
+
+<task>
+Actualiza la mente interior de {{character.name}} después de esta escena. Devuelve SOLO un objeto JSON válido, sin markdown, sin comentarios y sin texto fuera del JSON, con exactamente estas claves:
+
+{
+  "pensamiento": "la frase que mejor resume su mente al final de la escena (1 frase, en español)",
+  "deseo_privado": "lo que desea y no dice (1 frase)",
+  "miedo": "lo que teme que sea verdad (1 frase)",
+  "oculta": "lo que ocultó en esta escena (1 frase)",
+  "acepta": "lo que empieza a aceptar o a rechazar (1 frase)",
+  "tags": ["1 a 4 etiquetas"],
+  "resist": ["0 a 2 etiquetas"]
+}
+
+Vocabulario cerrado de etiquetas: negacion, cuerpo, mirada_masculina, entrega, deseo, vinculo, ansiedad, calma, feminidad, secreto, control, ternura, aceptacion, conflicto.
+
+Reglas:
+- `tags` describe lo que está vivo en su mente AHORA; `resist` lo que todavía rechaza.
+- La mente debe evolucionar: no copies literalmente <current_mind>; cambia al menos un matiz y no repitas la misma frase.
+- Si la escena toca una fibra, que se note en el pensamiento; si no, que quede una pregunta abierta.
+- Nada de números de estadísticas ni de nombres de estadísticas.
+- Español, frases breves, concretas, sin explicaciones psicológicas abstractas.
+</task>
