@@ -7,7 +7,7 @@
 // rechaza. Las escenas declaran `mindTags`; si una etiqueta coincide con `tags` hay
 // resonancia (la escena le toca una fibra), y si coincide con `resist` hay fricción
 // (la escena le obliga a mirar lo que evita). Esa tensión alimenta las estadísticas
-// (ver stats.json -> mind) y también la elección de escena.
+// (ver stats.json -> mind). La escena se elige al azar, sin pesar estas etiquetas.
 
 export const MIND_TAGS = [
   'negacion', 'cuerpo', 'mirada_masculina', 'entrega', 'deseo', 'vinculo',
@@ -75,13 +75,6 @@ export function mindMatch(scene, mind, stats) {
   return { tags: sceneTags, resonance, friction };
 }
 
-// Cuánto le "toca" una escena a la mente: preferimos las que resuenan y, sobre todo,
-// las que le ponen delante aquello que resiste (eso es lo que hace avanzar el arco).
-export function sceneMindScore(scene, mind, stats) {
-  const m = mindMatch(scene, mind, stats);
-  return m.resonance.length * 2 + m.friction.length * 2.5;
-}
-
 const EMPTY_EFFECT = () => ({ tags: [], resonance: [], friction: [], deltas: {} });
 
 // Deltas planos que la mente añade a las estadísticas de la escena.
@@ -126,24 +119,45 @@ export function mindText(mind) {
 }
 
 // Pensamientos de una entrada del historial (líneas *...* del diálogo).
-export function thoughtsOf(dialogue) {
+// Si se indica un nombre, solo devuelve las de ese hablante: así los gestos del
+// master no se cuelan en la memoria interior de la neo mujer.
+export function thoughtsOf(dialogue, characterName = '') {
+  const want = String(characterName ?? '').trim().toLowerCase();
   return String(dialogue || '')
     .split('\n')
     .map((l) => l.trim())
     .filter((l) => /\*[^*]+\*/.test(l))
+    .filter((l) => {
+      if (!want) return true;
+      const m = l.match(/^([^:*\n]{1,40}):/);
+      return m ? m[1].trim().toLowerCase() === want : false;
+    })
     .slice(0, 6);
 }
 
-// Memoria interior para el prompt: las últimas mentes completas + un resumen anterior.
-// No repite las historias (ya viajan en <previous_story>), solo el hilo privado.
-export function innerMemoryText(history = [], limit = 3) {
+// Resumen de lo ya vivido para el prompt: solo nombres de escena y cambios,
+// sin prosa ni detalles de lugar/acción. En modo viñeta la escena de HOY manda;
+// esto únicamente evita contradecir el pasado.
+export function storyMemoryText(history = [], limit = 4) {
+  if (!history.length) return '(sin escenas anteriores)';
+  return history.slice(-limit).map((h) => {
+    const changes = (h.changes || [])
+      .filter((c) => c && Number(c.delta))
+      .map((c) => `${c.stat} ${c.delta > 0 ? '+' : ''}${c.delta}`)
+      .join(', ');
+    return `- ${h.scene?.name || 'Escena'}${changes ? ` (${changes})` : ''}`;
+  }).join('\n');
+}
+
+// Memoria interior para el prompt: solo las últimas mentes, sin repetir la
+// escena física (ni los gestos del master). La mente vive en <current_mind>.
+export function innerMemoryText(history = [], limit = 2) {
   if (!history.length) return '(sin memoria interior todavía)';
-  const recent = history.slice(-limit);
-  const older = history.slice(0, -limit).slice(-4);
-  const rows = recent.map((h) => {
-    const when = h.time ? `Día ${h.time.day} · ${h.time.start}–${h.time.end} · ${h.time.concept}` : 'Escena';
+  return history.slice(-limit).map((h) => {
+    const when = h.time
+      ? `Día ${h.time.day} · ${h.time.start}–${h.time.end} · ${h.time.concept}`
+      : h.t ? new Date(h.t).toLocaleString('es') : 'Escena';
     const m = h.mind || {};
-    const thoughts = thoughtsOf(h.dialogue);
     return [
       `[${when} — ${h.scene?.name || 'escena'}]`,
       m.pensamiento && `Pensamiento: ${m.pensamiento}`,
@@ -153,14 +167,8 @@ export function innerMemoryText(history = [], limit = 3) {
       m.acepta && `Lo que aceptó: ${m.acepta}`,
       m.tags?.length && `Etiquetas: ${m.tags.join(', ')}`,
       m.resist?.length && `Todavía resiste: ${m.resist.join(', ')}`,
-      thoughts.length && `Pensamientos de la escena:\n${thoughts.map((t) => '  ' + t).join('\n')}`,
     ].filter(Boolean).join('\n');
-  });
-  const old = older.map((h) => {
-    const when = h.time ? `Día ${h.time.day} ${h.time.start}` : '';
-    return `- ${when} ${h.scene?.name || ''}: ${h.mind?.pensamiento || '(sin pensamiento registrado)'}`.trim();
-  });
-  return [...rows, old.length ? '[Hilo anterior]\n' + old.join('\n') : ''].filter(Boolean).join('\n---\n');
+  }).join('\n---\n');
 }
 
 // Extrae el JSON que devuelve prompt_mind aunque venga con ```json ... ``` o texto alrededor.
@@ -194,8 +202,8 @@ export function demoMind(character, previous = null) {
 }
 
 // Si el modelo no devuelve JSON, conservamos lo anterior y rescatamos el último pensamiento.
-export function fallbackMind(dialogue, previous = null) {
-  const thoughts = thoughtsOf(dialogue);
+export function fallbackMind(dialogue, previous = null, characterName = '') {
+  const thoughts = thoughtsOf(dialogue, characterName);
   const last = thoughts.at(-1)?.replace(/^\s*[^:]{1,40}:\s*/, '').replace(/\*/g, '').trim();
   return normalizeMind({
     ...(previous || {}),

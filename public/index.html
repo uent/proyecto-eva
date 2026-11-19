@@ -39,7 +39,7 @@
     <select id="char" title="Personaje actual"></select>
     <label class="lbl" for="count">Avances</label>
     <input id="count" type="number" min="1" max="10" value="1" title="Cuántos avances completos generar seguidos">
-    <button id="go">⏭ Avanzar tiempo</button>
+    <button id="go">⏭ Siguiente escena</button>
     <button id="reset">↺ Reiniciar personaje</button>
     <span id="status"></span>
   </div>
@@ -47,8 +47,7 @@
 <main>
   <aside><h2>Estadísticas</h2><div id="stats"></div>
     <div id="mood"></div>
-    <h2 class="h-mind">Mente</h2><div id="mind"></div>
-    <h2 class="h-sched">Horario</h2><div id="sched"></div></aside>
+    <h2 class="h-mind">Mente</h2><div id="mind"></div></aside>
   <section id="feed"></section>
 </main>
 <dialog id="dlg"><form method="dialog" id="form">
@@ -67,7 +66,6 @@
     <small>Vocabulario: negacion, cuerpo, mirada_masculina, entrega, deseo, vinculo, ansiedad, calma, feminidad, secreto, control, ternura, aceptacion, conflicto.</small>
   </fieldset>
   <fieldset><legend>Estadísticas iniciales</legend><div id="fstats"></div></fieldset>
-  <fieldset><legend>Horario diario (5 bloques)</legend><div id="fsched"></div></fieldset>
   <fieldset><legend>Cuerpo (secciones fijas)</legend><div id="fbody"></div></fieldset>
   <div class="actions"><button type="button" id="cancel">Cancelar</button><button type="submit" id="save">Guardar</button></div>
   <small>Guardar escribe data/characters/*.json. El progreso en curso del personaje no se reinicia.</small>
@@ -81,7 +79,7 @@
   <label>Prompt de mente — estado interior <textarea name="prompt_mind" rows="6"></textarea></label>
   <small>Mismos tags + {{story}} + {{dialogue}}. Debe devolver solo JSON: pensamiento, deseo_privado, miedo, oculta, acepta, tags y resist.</small>
   <label>Prompt de imagen <textarea name="image" rows="5"></textarea></label>
-  <small>Tags de cuerpo (solo las partes visibles según el encuadre): {{body}} {{body.general}} {{body.head}} {{body.chest}} {{body.hips}} {{body.legs}} · Master: {{master}} {{master.name}} {{master.head}} {{master.hands}}… · Expresión: {{expression}} {{expression.name}} {{expression.story}} {{expression.score}} · además {{character.name}} {{scene.description}} {{scene.location}} {{environment.description}}</small>
+  <small>Tags de cuerpo (todas las partes, siempre disponibles): {{body}} {{body.general}} {{body.head}} {{body.chest}} {{body.hips}} {{body.legs}} · Master (todas sus partes, siempre disponibles): {{master}} {{master.name}} {{master.head}} {{master.hands}}… · Expresión: {{expression}} {{expression.name}} {{expression.story}} {{expression.score}} · además {{character.name}} {{scene.description}} {{scene.location}} {{environment.description}}</small>
   <label>Lorebook de respaldo (.md) <textarea name="lorebook" rows="6"></textarea></label>
   <small id="lorebooknote"></small>
   <div class="actions"><button type="button" id="pcancel">Cerrar</button><button type="submit">Guardar</button></div>
@@ -89,9 +87,10 @@
 <dialog id="sdlg"><form id="sform">
   <h2 id="sdtitle">Escena</h2>
   <label>Nombre <input name="name" required></label>
-  <label>Concepto (agrupa escenas; los bloques horarios eligen uno al azar) <input name="concept" list="concepts" placeholder="ej. descanso, trabajo, social"><datalist id="concepts"></datalist></label>
   <label>Lugar <input name="location"></label>
-  <label>Descripción (lo que hace el personaje) <textarea name="description" rows="3"></textarea></label>
+  <label>Descripción visual (lo que hace el personaje) <textarea name="description" rows="3"></textarea></label>
+  <label>Qué ocurre en la escena (guía para el LLM, en español) <textarea name="beat" rows="3" placeholder="Ej.: ella lo masturba bajo la mesa mientras él cena en el food court; él disimula y ella no puede levantar la vista."></textarea></label>
+  <small>Se inyecta como <b>{{scene.beat}}</b> en los prompts de historia y diálogo. La descripción visual sigue siendo solo para la imagen.</small>
   <label>Etiquetas de mente (coma; activan resonancia o fricción) <input name="mindTags" placeholder="cuerpo, entrega, secreto"></label>
   <small>Si una etiqueta coincide con la mente activa hay resonancia; si coincide con lo que resiste, fricción. Las dos suman tensión y modifican estadísticas (ver data/stats.json → mind).</small>
   <div class="two">
@@ -101,8 +100,6 @@
   <div class="pthead"><span>Template del prompt de imagen</span>
     <label class="tog"><input type="checkbox" id="swith"> Insertar datos del personaje y del master <small id="pcap"></small></label></div>
   <textarea id="sprompt" rows="5" readonly></textarea>
-  <fieldset><legend>Master en la escena</legend><div id="smaster" class="sgrid"></div>
-    <small>Marca las partes del master que se ven. <b>{{master}}</b> se resuelve solo con esas partes; sin ninguna marcada, el master no aparece en la imagen.</small></fieldset>
   <div class="taghead"><span>Tags disponibles</span><small>Haz clic para insertarlos en el campo que estés editando (por defecto, la descripción).</small></div>
   <div id="stags" class="tags"></div>
   <fieldset><legend>Efectos base en estadísticas</legend><div id="sfx"></div></fieldset>

@@ -1,0 +1,20 @@
+{
+  "name": "Despertando con una mamada",
+  "environment": "dormitorio",
+  "aspect": "1:1",
+  "location": "Dormitorio",
+  "description": "1boy, penis, pov, 1girl, {{character.name}}, 30yo,{{body.head}}, {{expression.name}}, naked, deepthroat, headgrab, open eyes, tears, facial, under the sheet, bed, medium breast, pressed tits,",
+  "beat": "Esta cordinano, quiera ella o no, que debe despertarte con una mamada en cada mañana.",
+  "mindTags": [
+    "cuerpo",
+    "entrega",
+    "control"
+  ],
+  "effects": {
+    "deseo": 5,
+    "feminidad": 1,
+    "obediencia": 6,
+    "vínculo": 3,
+    "ansiedad": 5
+  }
+}

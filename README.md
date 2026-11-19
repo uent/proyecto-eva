@@ -20,21 +20,21 @@ cp .env.example .env   # completa NANOGPT_API_KEY
 npm start              # http://localhost:3000
 ```
 
-En la interfaz: elige personaje → **⏭ Avanzar tiempo**: pasa al siguiente bloque del horario del personaje, elige una escena al azar de su concepto y genera el contenido. Al terminar el último bloque pasa al día siguiente. El campo **Avances** (1–10) permite generar varios bloques seguidos en una sola pulsación; cada avance se completa con su historia, diálogo, imagen y cambios de estadísticas antes de empezar el siguiente. El botón **Recargar prompts y escenas** relee todos los archivos de `data/` sin reiniciar el servidor.
+En la interfaz: elige personaje → **⏭ Siguiente escena**: elige una escena al azar entre todas las guardadas (bolsa barajada: no repite ninguna hasta haber salido todas) y genera el contenido. Cada avance queda fechado con el momento en que se generó. El campo **Avances** (1–10) permite generar varias escenas seguidas en una sola pulsación; cada avance se completa con su historia, diálogo, imagen y cambios de estadísticas antes de empezar el siguiente. El botón **Recargar prompts y escenas** relee todos los archivos de `data/` sin reiniciar el servidor.
 
 ## Flujo de generación
 
-1. `prompt_1` = lorebook filtrado + personaje (con sus stats, expresión y mente declarada) + escena + memoria interior + historia previa → **historia**.
+1. `prompt_1` = lorebook filtrado + personaje (con sus stats, expresión y mente declarada) + escena de HOY + memoria compacta (resumen de escenas anteriores) + mente interior → **historia**.
 2. `prompt_2` = historia + escena → **conversación y pensamientos** entre personajes (`Nombre: mensaje` / `Nombre: *pensamiento*`), anclados en el acto sexual o en el deseo explícito de la escena.
 3. `prompt_mind` = historia + diálogo → **estado mental** de la neo mujer (JSON: pensamiento, deseo privado, miedo, lo que oculta, lo que acepta, etiquetas y resistencias).
-4. `prompt_image` = personaje + expresión + master (según la escena) + escena + entorno → **imagen**.
+4. `prompt_image` = personaje + expresión + master (si la escena usa sus tags) + escena + entorno → **imagen**.
 5. Se aplican las fórmulas, la resonancia/fricción de la mente y cambian las **estadísticas**.
 
 Los textos que alimentan la imagen (plantilla, cuerpo del personaje, descripción/lugar de la escena y descripción del entorno) están escritos en **inglés** para que el modelo de imagen los interprete mejor. La historia y el diálogo se siguen generando en **español**.
 
 ## Lorebook (World Info)
 
-`data/lorebook.json` es el lorebook activo, en formato World Info (el mismo de `lorebook_plantilla.json`). El motor filtra las entradas por palabras clave con el texto de la escena, el personaje y el historial reciente:
+`data/lorebook.json` es el lorebook activo, en formato World Info (el mismo de `lorebook_plantilla.json`). El motor filtra las entradas por palabras clave con el texto de la escena de HOY, el personaje y la mente actual (sin usar escenas anteriores, para que un lugar del pasado no se cuele en la escena actual):
 
 - `constant: true` → siempre se incluye.
 - `key: [...]` → se incluye si alguna palabra aparece en el contexto. También acepta `/regex/`.
@@ -90,7 +90,7 @@ El cuerpo se divide en secciones: `general`, `head` (cabeza y cabello), `chest`,
 
 Cada escena define `"aspect"`, el formato de la imagen: `16:9`, `1:1` o `9:16`. Los tags de cuerpo incluyen siempre todas las partes del personaje.
 
-Otros tags: `{{character.name}}`, `{{character.personality}}`, `{{character.traits}}`, `{{character.statsText}}`, `{{character.mind.voice}}`, `{{character.mind.contradiction}}`, `{{character.mind.secret}}`, `{{character.mind.taboo}}`, `{{character.mind.arc}}`, `{{scene.name}}`, `{{scene.description}}`, `{{scene.location}}`, `{{environment.name}}`, `{{environment.description}}`, `{{master}}`, `{{expression}}`, `{{expression.name}}`, `{{expression.story}}`, `{{expression.inner}}`, `{{expression.score}}`, `{{lorebook}}`, `{{inner_memory}}`, `{{current_mind}}`, `{{history}}`, `{{story}}` (solo en prompt_2 y prompt_mind), `{{dialogue}}` (solo en prompt_mind), `{{stats_json}}`, `{{recent_actions}}`.
+Otros tags: `{{character.name}}`, `{{character.personality}}`, `{{character.traits}}`, `{{character.statsText}}`, `{{character.mind.voice}}`, `{{character.mind.contradiction}}`, `{{character.mind.secret}}`, `{{character.mind.taboo}}`, `{{character.mind.arc}}`, `{{scene.name}}`, `{{scene.description}}`, `{{scene.location}}`, `{{scene.beat}}`, `{{environment.name}}`, `{{environment.description}}`, `{{master}}`, `{{expression}}`, `{{expression.name}}`, `{{expression.story}}`, `{{expression.inner}}`, `{{expression.score}}`, `{{lorebook}}`, `{{inner_memory}}`, `{{current_mind}}`, `{{memory}}` (resumen compacto de escenas anteriores), `{{history}}` (alias de `{{memory}}`), `{{story}}` (solo en prompt_2 y prompt_mind), `{{dialogue}}` (solo en prompt_mind), `{{stats_json}}`, `{{recent_actions}}`.
 
 Los tags se resuelven también dentro de la descripción de la escena, así que puedes escribir `{{master.hands}}` en la descripción y se expandirá al generar la imagen.
 
@@ -104,16 +104,16 @@ El **master** es un único personaje masculino que comparten las historias. Su a
   "hands": "...", "hips": "...", "legs": "..." } }
 ```
 
-Las partes se configuran en `data/master_parts.json`. Cada escena guarda en `"master"` la lista de partes **visibles** en ese encuadre: `[]` significa que el master no aparece.
+Las partes se configuran en `data/master_parts.json`. Igual que el cuerpo del personaje, todas las partes están **siempre disponibles**: si una escena no lleva master, simplemente no usa estos tags.
 
 | Tag | Resultado |
 |---|---|
-| `{{master}}` | Unión de las partes visibles definidas por la escena |
-| `{{master.head}}`, `{{master.hands}}`… | Esa parte; vacío si la escena no la marca |
+| `{{master}}` | Unión de todas las partes definidas en `master.json` |
+| `{{master.head}}`, `{{master.hands}}`… | Esa parte, siempre |
 | `{{master.name}}` | Nombre del master |
-| `{{master.hidden}}` | Partes no visibles (útil para un negative prompt) |
+| `{{master.hidden}}` | Vacío (se mantiene por compatibilidad, como `{{body.hidden}}`) |
 
-En el editor de escenas aparecen casillas para marcar esas partes y una paleta de **tags disponibles**: al hacer clic se insertan en el campo que estés editando (por defecto, la descripción).
+En el editor de escenas hay una paleta de **tags disponibles** (incluidos `{{master}}` y `{{master.parte}}`): al hacer clic se insertan en el campo que estés editando (por defecto, la descripción).
 
 ## Expresión según estadísticas
 
@@ -158,7 +158,7 @@ La mente es un estado propio del personaje, no un adorno de la escena. Tiene dos
 }
 ```
 
-**2. Mente viva** (`state/session.json` → `characters[id].mind`): después de cada escena, `prompt_mind` devuelve un JSON con `pensamiento`, `deseo_privado`, `miedo`, `oculta`, `acepta`, `tags` y `resist`. Ese estado viaja al prompt de la escena siguiente en `{{current_mind}}` y `{{inner_memory}}`, y se guarda en cada entrada del historial.
+**2. Mente viva** (`state/session.json` → `characters[id].mind`): después de cada escena, `prompt_mind` devuelve un JSON con `pensamiento`, `deseo_privado`, `miedo`, `oculta`, `acepta`, `tags` y `resist`. Ese estado viaja al prompt de la escena siguiente en `{{current_mind}}` (y queda disponible como `{{inner_memory}}` para prompts personalizados), y se guarda en cada entrada del historial. La mente se redacta como estado duradero: no menciona lugares, objetos ni acciones de la escena, para que siga teniendo sentido cuando la siguiente escena ocurra en otro sitio.
 
 **Cómo se nota en la historia:** `prompt_1` exige que al menos un tercio del texto sea experiencia interna, que cada escena tenga un giro interior (lo que piensa contradice o matiza lo que dice/hace) y que cierre con una decisión privada. `prompt_2` exige que al menos 4 líneas sean pensamientos de ella y que uno contradiga lo que acaba de decir en voz alta; además, el diálogo se escribe dentro del momento sexual de la escena: al menos dos tercios de las líneas nombran el acto o el deseo con vocabulario explícito, sin elipsis, y los pensamientos también están atravesados por el sexo.
 
@@ -172,7 +172,7 @@ La mente es un estado propio del personaje, no un adorno de la escena. Tiene dos
 }
 ```
 
-- La elección de escena dentro de un concepto ya no es puramente aleatoria: pesa la resonancia/fricción con la mente actual y evita repetir la última escena.
+- La escena se elige completamente al azar entre todas las guardadas; la mente solo influye en las estadísticas de la escena que toque.
 - La barra lateral muestra el **Estado interior** (pensamiento, deseo, miedo, lo que oculta/acepta y etiquetas); el botón **✎** abre la ficha del personaje.
 - Las tarjetas del historial muestran el pensamiento central y la resonancia/fricción de la escena.
 - Vocabulario de etiquetas: `negacion`, `cuerpo`, `mirada_masculina`, `entrega`, `deseo`, `vinculo`, `ansiedad`, `calma`, `feminidad`, `secreto`, `control`, `ternura`, `aceptacion`, `conflicto`.
@@ -180,13 +180,15 @@ La mente es un estado propio del personaje, no un adorno de la escena. Tiene dos
 ## Escenas
 
 ```json
-{ "name": "La pastilla rosa", "concept": "ritual", "environment": "hogar", "aspect": "9:16",
-  "master": ["hands"],
+{ "name": "La pastilla rosa", "environment": "hogar", "aspect": "9:16",
   "location": "EVA home, master bedroom", "description": "...",
+  "beat": "Ella espera la pastilla rosa en la palma de él; duda un segundo antes de tragarla.",
   "effects": { "deseo": 5, "feminidad": 5, "obediencia": 5, "vínculo": 3, "ansiedad": -4 } }
 ```
 
-**Conceptos:** cada escena puede tener un `concept` que las agrupa (p. ej. `ritual`, `hogar`, `compras`, `playa`, `fiesta`, `social`, `control`, `banos`). Los bloques horarios del personaje guardan un `concept` en vez de una escena, y al generar se elige una escena de ese concepto ponderando la **mente actual** (resonancia/fricción) y evitando repetir la última. En el selector de escena también aparecen los conceptos (`concept:<nombre>`) para probarlo a mano.
+`description` es el prompt visual (inglés, tags de imagen). `beat` es la explicación de **qué ocurre** en la escena, en español: se inyecta como `{{scene.beat}}` en los prompts de historia y diálogo para que el LLM interprete la situación sin depender de los tags visuales. También se usa para filtrar el lorebook.
+
+**Sin horarios ni conceptos:** ya no hay un selector de escena por franja horaria. En cada avance se elige una escena al azar entre todas las guardadas, sin pesos y sin depender del personaje. La elección usa una **bolsa barajada**: cada escena sale una vez antes de que se repita alguna, y al empezar una nueva vuelta se evita repetir la última escena. El campo `concept` de las escenas antiguas se ignora y desaparece al volver a guardarlas. Cada escena es una **viñeta**: la escena de HOY manda sobre el lugar y la acción; la memoria que viaja es un resumen breve de escenas anteriores y el estado interior, no la historia completa.
 
 Cada escena puede declarar `mindTags` (vocabulario de la sección **Mente interior**) para indicar qué fibra toca: por ejemplo, una escena de entrega en la cama puede llevar `["cuerpo", "entrega", "secreto"]`.
 

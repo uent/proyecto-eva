@@ -38,25 +38,21 @@ export function render(tpl, ctx) {
 }
 
 export function bodyContext(character) {
-  const all = Object.keys(character.body || {});
-  const visibleKeys = all; // el formato de la escena (16:9, 1:1, 9:16) ya no oculta partes del cuerpo
-  const body = {};
-  for (const k of all) body[k] = visibleKeys.includes(k) ? character.body[k] : '';
-  body.all = visibleKeys.filter((k) => character.body[k]).map((k) => character.body[k]).join(', ');
-  body.hidden = all.filter((k) => !visibleKeys.includes(k));
+  const body = { ...(character.body || {}) };
+  body.all = Object.keys(body).map((k) => String(body[k] ?? '').trim()).filter(Boolean).join(', ');
+  body.hidden = [];
   return body; // {{body}} se resuelve en render() como body.all
 }
 
-// Datos visuales del master filtrados por la escena: la escena guarda en `master` la lista
-// de partes visibles. {{master}} se resuelve como la unión de esas partes.
-export function masterContext(master, scene) {
+// Datos visuales del master: igual que el cuerpo del personaje, todas las partes están
+// siempre disponibles. Si una escena no lleva master, simplemente no usa estos tags.
+export function masterContext(master) {
   const body = master?.body || {};
-  const selected = Array.isArray(scene?.master) ? scene.master : [];
   const ctx = { name: master?.name || '' };
-  for (const k of Object.keys(body)) ctx[k] = selected.includes(k) ? body[k] : '';
-  ctx.all = selected.filter((k) => body[k]).map((k) => String(body[k]).trim()).filter(Boolean).join(', ');
-  ctx.hidden = Object.keys(body).filter((k) => !selected.includes(k));
-  ctx.present = selected.length > 0;
+  for (const k of Object.keys(body)) ctx[k] = body[k];
+  ctx.all = Object.keys(body).map((k) => String(body[k] ?? '').trim()).filter(Boolean).join(', ');
+  ctx.hidden = [];
+  ctx.present = ctx.all.length > 0;
   return ctx;
 }
 

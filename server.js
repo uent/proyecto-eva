@@ -8,8 +8,8 @@ import { expressionOf, DEFAULT_EXPRESSION } from './src/expression.js';
 import * as ai from './src/nanogpt.js';
 import { renderLorebook } from './src/lorebook.js';
 import {
-  MIND_TAGS, normalizeTags, normalizeMind, mindText, innerMemoryText,
-  parseMindJson, fallbackMind, demoMind, sceneMindScore,
+  MIND_TAGS, normalizeTags, normalizeMind, mindText, innerMemoryText, storyMemoryText,
+  parseMindJson, fallbackMind, demoMind,
 } from './src/mind.js';
 
 loadEnv();
@@ -20,24 +20,35 @@ let session = fs.existsSync(SESSION_FILE) ? JSON.parse(fs.readFileSync(SESSION_F
 fs.mkdirSync(path.dirname(SESSION_FILE), { recursive: true });
 const save = () => { fs.writeFileSync(SESSION_FILE + '.tmp', JSON.stringify(session, null, 2)); fs.renameSync(SESSION_FILE + '.tmp', SESSION_FILE); };
 
-const concepts = () => [...new Set(cfg.scenes.map((s) => s.concept).filter(Boolean))].sort();
-// "concept:<nombre>" elige una escena del concepto; si no, busca por id.
-// La elección ya no es puramente aleatoria: pesa qué escena toca la mente actual
-// (resonancia/fricción) y evita repetir la última escena.
-function pickScene(ref, st = null) {
-  if (String(ref).startsWith('concept:')) {
-    const pool = cfg.scenes.filter((s) => s.concept === ref.slice(8));
-    if (!pool.length) throw new Error('No hay escenas en el concepto: ' + ref.slice(8));
-    if (pool.length === 1) return pool[0];
-    const last = st?.history?.at(-1)?.scene?.id;
-    return pool
-      .map((s) => ({
-        s,
-        score: sceneMindScore(s, st?.mind, st?.stats) + (s.id === last ? -1.5 : 0) + Math.random() * 0.75,
-      }))
-      .sort((a, b) => b.score - a.score)[0].s;
+// Bolsa barajada: las escenas salen en orden aleatorio y ninguna se repite hasta
+// haber pasado por todas. Al vaciarse se vuelve a barajar, evitando que la primera
+// de la nueva vuelta sea la misma con la que cerró la anterior. Sigue sin depender
+// del personaje ni de pesos, pero el reparto se siente más aleatorio que elegir con
+// reemplazo (que producía rachas y escenas repetidas seguidas).
+let sceneBag = [];
+let lastSceneId = null;
+
+function refillSceneBag() {
+  const ids = cfg.scenes.map((s) => s.id);
+  for (let i = ids.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [ids[i], ids[j]] = [ids[j], ids[i]];
   }
-  return cfg.scenes.find((s) => s.id === ref);
+  // Se extrae con pop(): la primera de la vuelta es el último elemento.
+  if (ids.length > 1 && ids[ids.length - 1] === lastSceneId) {
+    [ids[0], ids[ids.length - 1]] = [ids[ids.length - 1], ids[0]];
+  }
+  sceneBag = ids;
+}
+
+function randomScene() {
+  if (!cfg.scenes.length) throw new Error('No hay escenas guardadas');
+  // Al recargar o borrar escenas, descarta de la bolsa las que ya no existen.
+  const available = new Set(cfg.scenes.map((s) => s.id));
+  sceneBag = sceneBag.filter((id) => available.has(id));
+  if (!sceneBag.length) refillSceneBag();
+  lastSceneId = sceneBag.pop();
+  return cfg.scenes.find((s) => s.id === lastSceneId);
 }
 
 const summary = () => ({
@@ -53,7 +64,6 @@ const summary = () => ({
   mindTags: MIND_TAGS,
   aspects: Object.keys(ai.ASPECTS),
   maxAdvances: MAX_ADVANCES,
-  concepts: concepts(),
   rules: cfg.rules,
   ruleOps: RULE_OPS,
   environments: cfg.environments,
@@ -80,7 +90,7 @@ function charState(id) {
 // así la estructura es siempre la misma y solo cambian los datos del personaje y de la escena.
 const aspectOf = (scene) => (ai.ASPECTS[scene?.aspect] ? scene.aspect : '1:1');
 const envOf = (scene) => cfg.environments.find((e) => e.id === scene?.environment) || { name: '', description: '' };
-const imagePromptFor = (c, scene, expression) => render(cfg.prompts.image, { character: c, scene, environment: envOf(scene), body: bodyContext(c), master: masterContext(cfg.master, scene), expression });
+const imagePromptFor = (c, scene, expression) => render(cfg.prompts.image, { character: c, scene, environment: envOf(scene), body: bodyContext(c), master: masterContext(cfg.master), expression });
 
 // Igual que imagePromptFor pero deja las etiquetas {{character.*}}, {{body.*}}, {{master.*}} y {{expression.*}} sin resolver (se ve el template).
 const tagProxy = (prefix, all) => new Proxy({}, { has: () => true, get: (_, k) => (k === 'all' ? all : `{{${prefix}.${String(k)}}}`) });
@@ -110,18 +120,6 @@ async function saveImage(characterId, t, img) {
 }
 const wipeImages = (id) => fs.rmSync(path.join(IMG_DIR, path.basename(String(id))), { recursive: true, force: true });
 
-// Avanza el reloj del personaje al siguiente bloque del horario que tenga concepto (con vuelta al día siguiente).
-function nextBlock(c, st) {
-  const sch = c.schedule || [];
-  const from = Number.isInteger(st.block) ? st.block : -1;
-  for (let i = 1; i <= sch.length; i++) {
-    const idx = (from + i) % sch.length;
-    if (sch[idx].concept && cfg.scenes.some((x) => x.concept === sch[idx].concept))
-      return { idx, day: (st.day || 1) + (from + i >= sch.length && from >= 0 ? 1 : 0), block: sch[idx] };
-  }
-  throw new Error(`${c.name} no tiene bloques con concepto en su horario (✎ Editar personaje)`);
-}
-
 // Estadísticas actuales en JSON, con su rango: {"alegría": {"valor": 50, "min": 0, "max": 100}, ...}
 function statsJson(stats) {
   const def = cfg.stats.stats || {};
@@ -131,8 +129,8 @@ function statsJson(stats) {
 // Últimas acciones (escenas vividas) en JSON, de la más antigua a la más reciente.
 function recentActionsJson(history, n = 5) {
   const rows = history.slice(-n).map((h) => ({
-    dia: h.time?.day, horario: h.time ? `${h.time.start}-${h.time.end}` : undefined,
-    concepto: h.time?.concept, escena: h.scene?.name, cambios_en_estadisticas: h.changes,
+    fecha: h.t ? new Date(h.t).toISOString() : undefined,
+    escena: h.scene?.name, cambios_en_estadisticas: h.changes,
   }));
   return rows.length ? JSON.stringify(rows, null, 2) : '[]';
 }
@@ -143,13 +141,13 @@ function cleanDialogue(raw) {
   return lines.length ? lines.join('\n') : String(raw).trim();
 }
 
-// Un avance completo: elige bloque/escena y genera historia, diálogo, mente, imagen y estadísticas.
+// Un avance completo: elige una escena al azar y genera historia, diálogo, mente, imagen y estadísticas.
 async function stepOne({ characterId }) {
   const [c, st] = charState(characterId);
-  const { idx, day, block } = nextBlock(c, st);
-  const scene = pickScene('concept:' + block.concept, st);
+  const scene = randomScene();
 
-  const history = st.history.slice(-3).map((h) => h.story).join('\n---\n') || '(sin historia previa)';
+  // Memoria compacta: la escena de hoy manda. El pasado solo evita contradicciones.
+  const memory = storyMemoryText(st.history);
 
   // Las estadísticas de la escena se calculan antes de generar: la expresión de la historia
   // es la del estado actual y la de la imagen, la del estado resultante. La mente actual
@@ -161,17 +159,21 @@ async function stepOne({ characterId }) {
   const ctx = {
     character: { ...c, traits: c.traits, statsText: Object.entries(st.stats).map(([k, v]) => `${k}: ${v}`).join(', ') },
     scene, environment: envOf(scene),
-    history,
+    memory,
+    // Alias para prompts antiguos que todavía usen {{history}}.
+    history: memory,
     stats_json: statsJson(st.stats),
     recent_actions: recentActionsJson(st.history),
     current_mind: mindText(st.mind),
-    inner_memory: innerMemoryText(st.history),
+    inner_memory: innerMemoryText(st.history, 2),
     body: bodyContext(c),
-    master: masterContext(cfg.master, scene),
+    master: masterContext(cfg.master),
     expression: expressionNow,
   };
-  // El lorebook se filtra por palabras clave según escena, personaje, historia y mente reciente.
-  const loreText = [c.name, c.personality, (c.traits || []).join(' '), scene.name, scene.location, scene.description, history, mindText(st.mind)].join('\n');
+  // El lorebook se filtra con la escena de HOY, el personaje y las etiquetas de la
+  // mente. No se usa la memoria ni la prosa de la mente: así una escena de dormitorio
+  // no activa "La Playa" porque el pensamiento mencione la arena del día anterior.
+  const loreText = [c.name, c.personality, (c.traits || []).join(' '), scene.name, scene.location, scene.description, scene.beat, (st.mind?.tags || []).join(' ')].join('\n');
   ctx.lorebook = renderLorebook(cfg, loreText);
 
   // La imagen no depende del texto: se genera en paralelo con la historia y el diálogo.
@@ -189,24 +191,24 @@ async function stepOne({ characterId }) {
       stats_json: statsJson(result.stats), expression: expressionAfter,
       lorebook: renderLorebook(cfg, loreText + '\n' + story + '\n' + dialogue),
     }))
-      .then((raw) => parseMindJson(raw, st.mind) || fallbackMind(dialogue, st.mind))
-      .catch(() => fallbackMind(dialogue, st.mind));
+      .then((raw) => parseMindJson(raw, st.mind) || fallbackMind(dialogue, st.mind, c.name))
+      .catch(() => fallbackMind(dialogue, st.mind, c.name));
 
   const imageUrl = await imagePromise;
   const mind = await mindPromise;
 
-  st.stats = result.stats; st.mind = mind; st.block = idx; st.day = day;
+  st.stats = result.stats; st.mind = mind;
   const t = Date.now();
   let saved = null, imageError = imageUrl.error;
   if (typeof imageUrl === 'string') saved = await saveImage(characterId, t, imageUrl).catch((e) => { imageError = e.message; return null; });
   const entry = {
-    t, aspect: aspectOf(scene), scene: { id: scene.id, name: scene.name }, time: { day, start: block.start, end: block.end, concept: block.concept }, story, dialogue, imagePrompt,
+    t, aspect: aspectOf(scene), scene: { id: scene.id, name: scene.name }, story, dialogue, imagePrompt,
     image: saved, imageError, changes: result.changes, affinity: result.affinity, rules: result.rules, expression: expressionAfter,
     mind, mindEffect: result.mind,
   };
   st.history.push({ ...entry, stats: st.stats });
   save();
-  return { ...entry, stats: st.stats, block: idx, day };
+  return { ...entry, stats: st.stats };
 }
 
 // Varios avances seguidos. Cada uno se completa antes de empezar el siguiente
@@ -254,18 +256,13 @@ http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://x');
     if (url.pathname === '/api/state') return json(res, 200, summary());
-    if (url.pathname === '/api/reload' && req.method === 'POST') { cfg = loadAll(); loadEnv(); return json(res, 200, summary()); }
+    if (url.pathname === '/api/reload' && req.method === 'POST') { cfg = loadAll(); loadEnv(); sceneBag = []; return json(res, 200, summary()); }
     if (url.pathname === '/api/step' && req.method === 'POST') return json(res, 200, await step(await body(req)));
     if (url.pathname === '/api/character' && req.method === 'POST') {
       const { id, data } = await body(req);
       const safe = slug(id || data?.name);
       if (!safe || !data?.name) throw new Error('El personaje necesita un nombre');
-      const { id: _omit, style: _style, ...clean } = data;
-      const hhmm = (v, d) => (/^([01]\d|2[0-3]):[0-5]\d$/.test(v) ? v : d);
-      clean.schedule = (Array.isArray(data.schedule) ? data.schedule : []).slice(0, 5).map((b) => ({
-        start: hhmm(b?.start, '00:00'), end: hhmm(b?.end, '00:00'),
-        concept: concepts().includes(b?.concept) ? b.concept : '',
-      }));
+      const { id: _omit, style: _style, schedule: _schedule, ...clean } = data;
       clean.body = Object.fromEntries(Object.keys(cfg.bodyParts).map((k) => [k, String(data.body?.[k] ?? '')]));
       clean.mind = characterMind(data.mind);
       fs.writeFileSync(path.join(ROOT, 'data', 'characters', safe + '.json'), JSON.stringify(clean, null, 2) + '\n');
@@ -285,10 +282,10 @@ http.createServer(async (req, res) => {
       const safe = slug(id || data?.name);
       if (!safe || !data?.name) throw new Error('La escena necesita un nombre');
       const clean = {
-        name: String(data.name), concept: String(data.concept || '').trim(), environment: cfg.environments.some((e) => e.id === data.environment) ? data.environment : '',
+        name: String(data.name), environment: cfg.environments.some((e) => e.id === data.environment) ? data.environment : '',
         aspect: aspectOf(data),
-        master: [...new Set((Array.isArray(data.master) ? data.master : []).filter((k) => cfg.masterParts[k]))],
         location: String(data.location || ''), description: String(data.description || ''),
+        beat: String(data.beat || '').trim().slice(0, 2000),
         mindTags: normalizeTags(data.mindTags),
         effects: Object.fromEntries(Object.keys(cfg.stats.stats).map((k) => [k, num(data.effects?.[k])])),
       };

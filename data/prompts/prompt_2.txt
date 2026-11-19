@@ -4,6 +4,7 @@
 
 <scene>
 {{scene.name}} — {{scene.location}}
+{{scene.beat}}
 Tema: {{scene.mindTags}}
 </scene>
 

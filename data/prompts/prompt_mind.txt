@@ -29,11 +29,11 @@ Expresión resultante: {{expression.name}} ({{expression.inner}})
 Actualiza la mente interior de {{character.name}} después de esta escena. Devuelve SOLO un objeto JSON válido, sin markdown, sin comentarios y sin texto fuera del JSON, con exactamente estas claves:
 
 {
-  "pensamiento": "la frase que mejor resume su mente al final de la escena (1 frase, en español)",
-  "deseo_privado": "lo que desea y no dice (1 frase)",
-  "miedo": "lo que teme que sea verdad (1 frase)",
-  "oculta": "lo que ocultó en esta escena (1 frase)",
-  "acepta": "lo que empieza a aceptar o a rechazar (1 frase)",
+  "pensamiento": "la frase que mejor resume su mente al final de la escena, sin nombrar lugares, objetos ni acciones concretas (1 frase, en español)",
+  "deseo_privado": "lo que desea y no dice, como estado duradero (1 frase)",
+  "miedo": "lo que teme que sea verdad, como estado duradero (1 frase)",
+  "oculta": "el conflicto interno que ocultó, sin describir la acción física (1 frase)",
+  "acepta": "lo que empieza a aceptar o a rechazar, como estado duradero (1 frase)",
   "tags": ["1 a 4 etiquetas"],
   "resist": ["0 a 2 etiquetas"]
 }
@@ -44,6 +44,8 @@ Reglas:
 - `tags` describe lo que está vivo en su mente AHORA; `resist` lo que todavía rechaza.
 - La mente debe evolucionar: no copies literalmente <current_mind>; cambia al menos un matiz y no repitas la misma frase.
 - Si la escena toca una fibra, que se note en el pensamiento; si no, que quede una pregunta abierta.
+- Esta mente viaja a la escena siguiente, que puede ocurrir en otro lugar. No menciones lugares, objetos, posturas, actos ni frases de esta escena: describe solo lo que sigue siendo cierto de ella en cualquier lugar.
+- `pensamiento`, `deseo_privado`, `miedo`, `oculta` y `acepta` deben poder leerse sin saber qué pasó en esta escena.
 - Nada de números de estadísticas ni de nombres de estadísticas.
 - Español, frases breves, concretas, sin explicaciones psicológicas abstractas.
 </task>

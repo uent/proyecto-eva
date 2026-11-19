@@ -1,16 +1,15 @@
 {
   "name": "Tarde en la playa",
-  "concept": "playa",
   "environment": "playa",
-  "aspect": "16:9",
-  "master": [],
+  "aspect": "1:1",
   "location": "Urban beach, pale sand by the sea",
+  "description": "1girl, {{body.head}},{{body.general}}, {{expression.name}},\n double strap  tight pink bikini, walking in the sand,\nbeach",
+  "beat": "la neo mujer debe usar una ropa extremadamente femenina: un bikini, en la playa, ¿como se sentira al usarla, como se siente al saber que todos los hombres la miran?",
   "mindTags": [
     "cuerpo",
     "mirada_masculina",
     "aceptacion"
   ],
-  "description": "walking barefoot along the shoreline in a minimal bikini with the patch hidden under the fabric, the warm sea at her ankles and her master's gaze on her",
   "effects": {
     "deseo": 6,
     "feminidad": 2,

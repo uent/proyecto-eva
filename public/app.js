@@ -71,12 +71,52 @@ $('xform').onsubmit = async (ev) => {
     $('xdlg').close(); $('status').textContent = 'Niveles de expresión guardados ✔';
   } catch (err) { $('status').textContent = 'Error: ' + err.message; }
 };
-function renderSchedule() {
-  const sch = S.characters.find((c) => c.id === $('char').value)?.schedule || [];
-  const st = S.session.characters[$('char').value], cur = Number.isInteger(st?.block) ? st.block : -1;
-  $('sched').innerHTML = (cur >= 0 ? `<small>Día ${st.day || 1}</small>` : '<small>Sin comenzar: ⏭ inicia el primer bloque</small>') +
-    (sch.length ? sch.map((b, i) => `<div class="blk ${i === cur ? 'now' : ''}"><b>${b.start}–${b.end}</b>
-    <span>${b.concept ? esc(b.concept) : '<i>sin concepto</i>'}</span></div>`).join('') : '<small>Sin horario. Defínelo en ✎ Editar personaje.</small>');
+// ---- Diálogo: cada nombre con su color y los *…* marcados como voz interior ----
+const NAME_COLORS = ['#b23267', '#a5641f', '#6b4a9a', '#27705c', '#1f5f8b', '#a1264a',
+  '#7a5a1f', '#8a3a8a', '#2e6b4f', '#9c4326', '#3f4fa0', '#8a3060'];
+// Registro de hablantes: un color por nombre, fijo durante la sesión y distinto para cada uno.
+// El reparto (personajes + master) entra primero; después, los secundarios en orden de aparición.
+const speakerColor = new Map();
+function registerSpeaker(name) {
+  const k = String(name ?? '').trim().toLowerCase();
+  if (!k) return NAME_COLORS[0];
+  if (!speakerColor.has(k)) speakerColor.set(k, NAME_COLORS[speakerColor.size % NAME_COLORS.length]);
+  return speakerColor.get(k);
+}
+function primeSpeakers() {
+  speakerColor.clear();
+  (S.characters || []).forEach((c) => registerSpeaker(c.name));
+  if (S.master?.name) registerSpeaker(S.master.name);
+  for (const st of Object.values(S.session?.characters || {}))
+    for (const e of st.history || [])
+      for (const line of String(e.dialogue || '').split('\n')) {
+        const m = line.match(/^([^:*\n]{1,40}):/);
+        if (m) registerSpeaker(m[1]);
+      }
+}
+// Cada línea es `Nombre: texto`. El nombre va coloreado; lo que está entre asteriscos
+// se envuelve en «…» con un tono cálido para leerlo como lo que pasa dentro de la cabeza.
+function dialogueHTML(text) {
+  const raw = String(text ?? '').replace(/\r\n?/g, '\n').replace(/\*\*+/g, '*');
+  let mental = false; // puede abrirse en una línea y cerrarse en otra
+  return raw.split('\n').map((line) => {
+    const segs = line.split('*');
+    let out = '', empty = true;
+    segs.forEach((seg, i) => {
+      if (seg) {
+        if (mental) out += `<span class="mental">${esc(seg)}</span>`;
+        else if (empty) {
+          const m = seg.match(/^([\p{L}][\p{L}\p{N} .'_-]{0,31}):([\s\S]*)$/u);
+          out += m
+            ? `<span class="say-name" style="--nc:${registerSpeaker(m[1])}">${esc(m[1])}</span>:${esc(m[2])}`
+            : esc(seg);
+        } else out += esc(seg);
+        empty = false;
+      }
+      if (i < segs.length - 1) mental = !mental;
+    });
+    return out;
+  }).join('\n');
 }
 // 16:9 -> tarjeta apilada (imagen ancha arriba); 1:1 -> dos columnas; 9:16 -> imagen estrecha a la izquierda.
 const aspectOf = (a) => (['16:9', '1:1', '9:16'].includes(a) ? a : '1:1');
@@ -88,18 +128,19 @@ function card(e) {
   const mind = e.mind?.pensamiento ? `<div class="mindquote">“${esc(e.mind.pensamiento)}”</div>` : '';
   const asp = aspectOf(e.aspect);
   return `<div class="card" data-aspect="${asp}" style="--ar:${asp.replace(':', '/')}"><div class="pic">${e.image ? `<img src="${e.image}">` : `<i>${esc(e.imageError || 'sin imagen')}</i>`}</div>
-  <div><h3>${esc(e.scene.name)} <small>${e.time ? `Día ${e.time.day} · ${e.time.start}–${e.time.end} · ${esc(e.time.concept)}` : new Date(e.t).toLocaleString()}</small></h3>
-  <div class="story">${esc(e.story)}</div>${mind}<div class="dlg">${esc(e.dialogue)}</div><div class="chg">${mood}${mental}${chg} (afinidad ${e.affinity})${e.rules?.length ? ` · reglas: ${esc(e.rules.join(', '))}` : ''}</div>
+  <div><h3>${esc(e.scene.name)} <small>${new Date(e.t).toLocaleString()}</small></h3>
+  <div class="story">${esc(e.story)}</div>${mind}<div class="dlg">${dialogueHTML(e.dialogue)}</div><div class="chg">${mood}${mental}${chg} (afinidad ${e.affinity})${e.rules?.length ? ` · reglas: ${esc(e.rules.join(', '))}` : ''}</div>
   <details><summary>Prompt de imagen</summary>${esc(e.imagePrompt)}</details></div></div>`;
 }
 function renderFeed() {
   const h = S.session.characters[$('char').value]?.history || [];
   $('feed').innerHTML = h.slice().reverse().map(card).join('');
 }
-function refresh() { renderStats(); renderMood(); renderMind(); renderSchedule(); renderFeed(); $('status').textContent = S.demo ? 'MODO DEMO (sin API key)' : 'NanoGPT conectado'; }
+function refresh() { renderStats(); renderMood(); renderMind(); renderFeed(); $('status').textContent = S.demo ? 'MODO DEMO (sin API key)' : 'NanoGPT conectado'; }
 async function load(data) {
   S = data || await api('state');
   S.minds ??= {};
+  primeSpeakers();
   fill($('char'), S.characters, $('char').value); fill($('scene'), S.scenes, $('scene').value); fill($('env'), S.environments, $('env').value);
   $('mname').textContent = S.master?.name || '—';
   $('count').max = S.maxAdvances || 10; refresh();
@@ -122,14 +163,14 @@ $('go').onclick = async () => {
   const c = S.session.characters[characterId];
   try {
     for (let i = 1; i <= n; i++) {
-      $('status').textContent = n > 1 ? `Generando avance ${i} de ${n}…` : 'Avanzando el tiempo…';
+      $('status').textContent = n > 1 ? `Generando avance ${i} de ${n}…` : 'Generando escena…';
       // Un avance completo por petición: así la interfaz muestra el progreso y no se acumula un timeout largo.
       const r = await api('step', { characterId, count: 1 });
       const e = r.entries[0];
-      c.stats = e.stats; c.mind = e.mind; c.block = e.block; c.day = e.day; c.history.push(e);
+      c.stats = e.stats; c.mind = e.mind; c.history.push(e);
       S.moods[characterId] = e.expression;
       S.minds[characterId] = e.mind;
-      renderStats(); renderMood(); renderMind(); renderSchedule(); renderFeed();
+      renderStats(); renderMood(); renderMind(); renderFeed();
     }
     refresh();
     $('status').textContent = n > 1 ? `${n} avances generados ✔` : 'Avance generado ✔';
@@ -251,19 +292,21 @@ $('rsave').onclick = async () => {
   catch (err) { $('rmsg').textContent = 'Error: ' + err.message; }
 };
 
-// ---- Histórico de eventos del personaje (agrupado por día, del más reciente al más antiguo) ----
+// ---- Histórico de eventos del personaje (agrupado por fecha, del más reciente al más antiguo) ----
+const dayKey = (t) => { const d = new Date(t); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
+const dayLabel = (t) => new Date(t).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 function renderHistory() {
   const name = S.characters.find((c) => c.id === $('char').value)?.name || '';
   const h = S.session.characters[$('char').value]?.history || [];
   $('htitle').textContent = `Histórico de ${name} · ${h.length} evento${h.length === 1 ? '' : 's'}`;
-  if (!h.length) { $('hlist').innerHTML = '<small>Aún no hay eventos. Pulsa ⏭ Avanzar tiempo.</small>'; return; }
+  if (!h.length) { $('hlist').innerHTML = '<small>Aún no hay eventos. Pulsa ⏭ Siguiente escena.</small>'; return; }
   const days = new Map();
-  h.forEach((e, i) => { const d = e.time?.day ?? 0; if (!days.has(d)) days.set(d, []); days.get(d).push({ e, i }); });
-  $('hlist').innerHTML = [...days.entries()].reverse().map(([d, items]) => `<h3>${d ? 'Día ' + d : 'Sin día'}</h3>` +
+  h.forEach((e, i) => { const d = dayKey(e.t); if (!days.has(d)) days.set(d, []); days.get(d).push({ e, i }); });
+  $('hlist').innerHTML = [...days.entries()].reverse().map(([, items]) => `<h3>${esc(dayLabel(items[0].e.t))}</h3>` +
     items.reverse().map(({ e, i }) => {
       const chg = (e.changes || []).filter((c) => c.delta).map((c) => `<span class="${c.delta < 0 ? 'neg' : ''}">${c.stat} ${c.delta > 0 ? '+' : ''}${c.delta}</span>`).join(' ');
       return `<div class="ev" data-i="${i}">${e.image ? `<img src="${e.image}" alt="">` : '<div class="noimg"></div>'}
-        <div><b>${e.time ? `${e.time.start}–${e.time.end} · ${esc(e.time.concept)}` : new Date(e.t).toLocaleString()}</b> — ${esc(e.scene.name)}
+        <div><b>${new Date(e.t).toLocaleString()}</b> — ${esc(e.scene.name)}
         <p>${esc((e.story || '').slice(0, 160))}…</p>
         ${e.mind?.pensamiento ? `<p class="evmind">“${esc(e.mind.pensamiento)}”</p>` : ''}<div class="chg">${chg}</div></div></div>`;
     }).join('')).join('');
@@ -354,16 +397,13 @@ $('mform').onsubmit = async (ev) => {
 let editingScene = null;
 function openScene(id) {
   editingScene = id;
-  const sc = id ? S.scenes.find((x) => x.id === id) : { name: '', concept: '', environment: '', aspect: '1:1', master: [], location: '', description: '', mindTags: [], effects: {} };
+  const sc = id ? S.scenes.find((x) => x.id === id) : { name: '', environment: '', aspect: '1:1', location: '', description: '', beat: '', mindTags: [], effects: {} };
   const f = $('sform').elements;
   $('sdtitle').textContent = id ? 'Editar escena: ' + sc.name : 'Nueva escena';
-  f.name.value = sc.name; f.concept.value = sc.concept || ''; f.location.value = sc.location || ''; f.description.value = sc.description || '';
+  f.name.value = sc.name; f.location.value = sc.location || ''; f.description.value = sc.description || ''; f.beat.value = sc.beat || '';
   f.mindTags.value = (sc.mindTags || []).join(', ');
   f.environment.innerHTML = '<option value="">— sin entorno —</option>' + S.environments.map((e) => `<option value="${esc(e.id)}" ${e.id === sc.environment ? 'selected' : ''}>${esc(e.name)}</option>`).join('');
-  $('concepts').innerHTML = S.concepts.map((e) => `<option value="${esc(e)}">`).join('');
   f.aspect.innerHTML = S.aspects.map((x) => `<option ${x === (sc.aspect || '1:1') ? 'selected' : ''}>${esc(x)}</option>`).join('');
-  $('smaster').innerHTML = Object.entries(S.masterParts).map(([k, label]) =>
-    `<label class="tog"><input type="checkbox" data-master="${esc(k)}" ${(sc.master || []).includes(k) ? 'checked' : ''}> ${esc(label)}</label>`).join('');
   renderSceneTags();
   tagTarget = f.description;
   $('sfx').innerHTML = Object.keys(S.statDefs).map((k) =>
@@ -372,11 +412,10 @@ function openScene(id) {
   $('sdlg').showModal(); updatePrompt();
 }
 function readScene() {
-  const f = $('sform').elements, effects = {}, master = [];
+  const f = $('sform').elements, effects = {};
   for (const i of $('sfx').querySelectorAll('input')) effects[i.dataset.fx] = Number(i.value) || 0;
-  for (const i of $('smaster').querySelectorAll('input')) if (i.checked) master.push(i.dataset.master);
-  return { name: f.name.value.trim(), concept: f.concept.value.trim(), environment: f.environment.value, aspect: f.aspect.value, master,
-    location: f.location.value.trim(), description: f.description.value.trim(),
+  return { name: f.name.value.trim(), environment: f.environment.value, aspect: f.aspect.value,
+    location: f.location.value.trim(), description: f.description.value.trim(), beat: f.beat.value.trim(),
     mindTags: f.mindTags.value.split(',').map((t) => t.trim()).filter(Boolean), effects };
 }
 
@@ -386,6 +425,7 @@ function sceneTagGroups() {
   const master = Object.keys(S.masterParts).map((k) => '{{master.' + k + '}}');
   const body = Object.keys(S.bodyParts).map((k) => '{{body.' + k + '}}');
   return [
+    ['Escena', ['{{scene.name}}', '{{scene.location}}', '{{scene.description}}', '{{scene.beat}}']],
     ['Master', ['{{master}}', '{{master.name}}', ...master]],
     ['Cuerpo', ['{{body}}', ...body]],
     ['Expresión', ['{{expression}}', '{{expression.name}}', '{{expression.story}}', '{{expression.inner}}', '{{expression.score}}']],
@@ -473,13 +513,6 @@ function openEditor(id) {
   f.mindResist.value = (c.mind?.resist || []).join(', ');
   $('fstats').innerHTML = Object.entries(S.statDefs).map(([k, d]) =>
     `<label class="srow">${k} <input type="number" data-stat="${k}" min="${d.min}" max="${d.max}" value="${c.stats?.[k] ?? d.start}"></label>`).join('');
-  const DEF = [['07:00','09:00'],['09:00','13:00'],['13:00','17:00'],['17:00','21:00'],['21:00','23:00']];
-  const sch = c.schedule?.length ? c.schedule : [];
-  $('fsched').innerHTML = DEF.map((d, i) => {
-    const b = sch[i] || { start: d[0], end: d[1], concept: '' };
-    return `<div class="brow"><input type="time" data-s="start" value="${b.start}"> – <input type="time" data-s="end" value="${b.end}">
-      <select data-s="concept"><option value="">— sin concepto —</option>${S.concepts.map((x) => `<option value="${esc(x)}" ${x === b.concept ? 'selected' : ''}>${esc(x)} (${S.scenes.filter((s) => s.concept === x).length})</option>`).join('')}</select></div>`;
-  }).join('');
   $('fbody').innerHTML = Object.entries(S.bodyParts).map(([k, label]) =>
     `<label>${esc(label)} <textarea rows="2" data-part="${k}">${esc(c.body?.[k] || '')}</textarea></label>`).join('');
   $('dlg').showModal();
@@ -504,8 +537,6 @@ $('form').onsubmit = async (ev) => {
       resist: f.mindResist.value.split(',').map((t) => t.trim()).filter(Boolean),
     },
     stats, body,
-    schedule: [...$('fsched').querySelectorAll('.brow')].map((r) => ({
-      start: r.querySelector('[data-s=start]').value, end: r.querySelector('[data-s=end]').value, concept: r.querySelector('[data-s=concept]').value })),
   };
   try {
     const r = await api('character', { id: editingId, data });

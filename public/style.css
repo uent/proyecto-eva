@@ -60,6 +60,12 @@ aside h2{margin:0 0 12px;font:italic 600 24px var(--serif)}
 .card h3 small{display:block;margin-top:4px;font:400 12px var(--sans);color:var(--mute)}
 .story{white-space:pre-wrap;font:20px/1.6 var(--serif)}
 .dlg{margin-top:16px;padding:4px 0 4px 16px;border-left:3px solid var(--accent);font:italic 20px/1.55 var(--serif);white-space:pre-wrap;max-width:62ch;color:#6b3a63}
+/* Nombre de quien habla: su color propio (--nc) y sin cursiva para separarlo de la voz. */
+.dlg .say-name{color:var(--nc,var(--accent));font-style:normal;font-weight:600;letter-spacing:.01em}
+/* Lo que va entre *…*: se lee como algo que ocurre dentro de la cabeza. */
+.dlg .mental{color:#8a5a3a;font-size:.95em;padding:0 2px;border-radius:6px;background:#f0a35e20;text-decoration:underline dotted #d9a878;text-underline-offset:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.dlg .mental::before{content:"« "}
+.dlg .mental::after{content:" »"}
 .chg{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px;font-size:12px;color:var(--mute);align-items:center}
 .chg span{background:#2f8a7220;color:var(--aqua);border-radius:999px;padding:2px 10px}
 .chg span.neg{background:#d9456f1c;color:var(--rose)}
@@ -118,14 +124,6 @@ form small,dialog small{color:var(--mute)}
 }
 @media (max-width:520px){#stats{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-
-/* ---------- Horario fijo (barra izquierda) ---------- */
-aside .h-sched{margin-top:22px}
-#sched{display:grid;gap:6px;font-size:13px;color:var(--mute)}
-.blk{display:flex;justify-content:space-between;gap:8px;background:var(--ink);border:1px solid var(--line);border-radius:999px;padding:6px 14px}
-.blk b{font-weight:600;color:var(--text)}
-.blk.now{border-color:var(--accent);background:#d9568a22}
-.blk.now span{color:var(--accent);font-weight:600}
 
 /* ---------- Histórico ---------- */
 #hdlg{width:760px}
